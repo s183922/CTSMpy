@@ -52,5 +52,6 @@ jobs:
     - name: type check with mypy
       run: |
         pip install mypy
-        mypy --strict  shroom_classifier/
-      continue-on-error: true
+        pip install -r requirements.txt
+        mypy --strict  src/
+      #continue-on-error: true

@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "ctsmpy"
 version = "0.0.1"
 description = "Continuous Time State Space Modelling in Python"
-readme = "README.rst"
+readme = "README.md"
 authors = [
   {name = "Peter Grønning", email = "s183922@student.dtu.dk"}
 ]

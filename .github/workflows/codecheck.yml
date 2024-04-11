@@ -52,5 +52,6 @@ jobs:
     - name: type check with mypy
       run: |
         pip install mypy
+        pip install -r requirements.txt
         mypy --strict  src/
       #continue-on-error: true

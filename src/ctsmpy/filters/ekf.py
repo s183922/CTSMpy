@@ -3,7 +3,7 @@ import numpy as np
 
 class ExtendenKalmanFilter(BaseFilter):
     def __init__(self) -> None:
-        super(ExtendenKalmanFilter).__init__()
+        super(ExtendenKalmanFilter, self).__init__()
         pass
 
     def predict(self) -> None:

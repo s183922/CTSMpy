@@ -2,6 +2,7 @@ import numpy as np
 from numpy.typing import NDArray
 import pandas as pd
 from typing import Union, Optional
+from numba import jit
 
 
 class BaseFilter():
@@ -120,6 +121,7 @@ class BaseFilter():
             Initial state covariance matrix.
         '''
         self.x[0] = x0
+        self.xp[0] = x0
         self.P[0] = P0
 
     def predict(self,
@@ -155,6 +157,7 @@ class BaseFilter():
         self._mountdata(data, inputs, t)
         self._allocate_arrays()
         self.set_initial_state(x0, P0)
+
         self._predict()
 
 
@@ -164,19 +167,19 @@ class BaseFilter():
         Allocates arrays for the filter.
         '''
         # State Covariance Matrix
-        self.P: NDArray[np.float32] = np.zeros((self.N, self.K, self.K), dtype=np.float32)
+        self.P: NDArray[np.float32] = np.zeros((self.N, self.k, self.k), dtype=np.float32)
 
         # Prediction Error Covariance Matrix
         self.R: NDArray[np.float32] = np.zeros((self.N, self.M, self.M), dtype=np.float32)
 
         # Kalman Gain
-        self.K: NDArray[np.float32] = np.zeros((self.N, self.K, self.M), dtype=np.float32)
+        self.K: NDArray[np.float32] = np.zeros((self.N, self.k, self.M), dtype=np.float32)
 
         # State Vector
-        self.x: NDArray[np.float32] = np.zeros((self.N, self.K), dtype=np.float32)
+        self.x: NDArray[np.float32] = np.zeros((self.N, self.k), dtype=np.float32)
 
         # Predicted State Vector
-        self.xp: NDArray[np.float32] = np.zeros((self.N, self.K), dtype=np.float32)
+        self.xp: NDArray[np.float32] = np.zeros((self.N, self.k), dtype=np.float32)
 
         # Output prediction
         self.yp: NDArray[np.float32] = np.zeros((self.N, self.M), dtype=np.float32)
@@ -184,28 +187,34 @@ class BaseFilter():
         # Innovation
         self.e: NDArray[np.float32] = np.zeros((self.N, self.M), dtype=np.float32)
 
+
     def _predict(self) -> None:
         '''
         Predicts the state of the system.
         '''
 
-        for i in range(1, self.N):
+        for i in range(self.N-1):
+        
             # Predict the observations
-            self.yp[i], self.R[i], self.K[i] = self._output_prediction(self.xp[i-1], self.P[i-1], i)
-
-            # Update the state
-            self.x[i], self.P[i] = self._data_update(self.xp[i], self.P[i], i)
-
-            # Time update
-            self.xp[i], self.P[i] = self._time_update(self.x[i-1], self.P[i-1], i)
+            self.yp[i], self.R[i], self.K[i] = self._output_prediction(self.xp[i], self.P[i], self.inputs[i], i)
 
             # Innovation equation
             self.e[i] = self.data[i] - self.yp[i]
 
+            # Data update
+            self.x[i], self.P[i] = self._data_update(self.xp[i], self.P[i], self.e[i], self.K[i], self.R[i], i)
 
+            # Time update
+            self.xp[i+1], self.P[i+1] = self._time_update(self.x[i], self.inputs[i], self.P[i], i)
+
+
+
+
+         
 
     def _time_update(self,
                      x: NDArray[np.float32],
+                     u: NDArray[np.float32],
                      P: NDArray[np.float32],
                      i: int,
                      ) -> Union[NDArray[np.float32],
@@ -217,6 +226,9 @@ class BaseFilter():
         ----------
         x : numpy array
             State vector.
+
+        u : numpy array
+            Inputs.
 
         P : numpy array
             State covariance matrix.
@@ -234,9 +246,13 @@ class BaseFilter():
         '''
         raise NotImplementedError('This method must be implemented in the derived class.')
 
+    
     def _data_update(self,
                         x: NDArray[np.float32],
                         P: NDArray[np.float32],
+                        e: NDArray[np.float32],
+                        K: NDArray[np.float32],
+                        R: NDArray[np.float32],
                         i: int,
                         ) -> Union[NDArray[np.float32],
                                     NDArray[np.float32]]:
@@ -251,6 +267,15 @@ class BaseFilter():
             P : numpy array
                 State covariance matrix.
 
+            e : numpy array
+                Innovation.
+            
+            K : numpy array
+                Kalman Gain.
+            
+            R : numpy array
+                Prediction error covariance matrix.
+
             i : int
                 Current time step.
 
@@ -263,10 +288,11 @@ class BaseFilter():
                 Updated state covariance matrix.
             '''
             raise NotImplementedError('This method must be implemented in the derived class.')
-
+    
     def _output_prediction(self,
                     x: NDArray[np.float32],
                     P: NDArray[np.float32],
+                    u: NDArray[np.float32],
                     i: int,
                     ) -> Union[NDArray[np.float32],
                                 NDArray[np.float32],
@@ -278,6 +304,9 @@ class BaseFilter():
         ----------
         x : numpy array
             State vector.
+
+        u : numpy array
+            Inputs.
 
         P : numpy array
             State covariance matrix.
@@ -316,4 +345,5 @@ class BaseFilter():
 
         nll = 0.5 * self.M * self.N * np.log(2 * np.pi) + 0.5 * nll
         return nll
+
 

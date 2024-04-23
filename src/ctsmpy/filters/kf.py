@@ -81,7 +81,7 @@ if __name__ == '__main__':
     from time import time
 
 
-    N = 10
+    N = 100
     M = 2
     A = np.random.randn(M, M) * 0.001
     A = A @ A.T

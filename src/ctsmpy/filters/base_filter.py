@@ -121,7 +121,6 @@ class BaseFilter():
             Initial state covariance matrix.
         '''
         self.x[0] = x0
-        self.xp[0] = x0
         self.P[0] = P0
 
     def predict(self,
@@ -194,10 +193,8 @@ class BaseFilter():
         '''
 
         for i in range(1,self.N):
-            
             # Time update
             self.xp[i], self.P[i] = self._time_update(self.x[i-1], self.inputs[i-1], self.P[i-1], i)
-
 
             # Predict the observations
             self.yp[i], self.R[i], self.K[i] = self._output_prediction(self.xp[i], self.P[i], self.inputs[i], i)
@@ -209,12 +206,6 @@ class BaseFilter():
             self.x[i], self.P[i] = self._data_update(self.xp[i], self.P[i], self.e[i], self.K[i], self.R[i], i)
 
             
-
-
-
-
-         
-
     def _time_update(self,
                      x: NDArray[np.float32],
                      u: NDArray[np.float32],
@@ -342,11 +333,6 @@ class BaseFilter():
             Loglikelihood of the filter.
         '''
         
-        nll = 0
-        for i in range(self.N):
-            nll += np.log(np.linalg.det(self.R[i])) + self.e[i] @ np.linalg.inv(self.R[i]) @ self.e[i]
-
-        nll = 0.5 * self.M * self.N * np.log(2 * np.pi) + 0.5 * nll
-        return nll
+        raise NotImplementedError('This method is not implemented yet.......')
 
 

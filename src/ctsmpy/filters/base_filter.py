@@ -193,8 +193,12 @@ class BaseFilter():
         Predicts the state of the system.
         '''
 
-        for i in range(self.N-1):
-        
+        for i in range(1,self.N):
+            
+            # Time update
+            self.xp[i], self.P[i] = self._time_update(self.x[i-1], self.inputs[i-1], self.P[i-1], i)
+
+
             # Predict the observations
             self.yp[i], self.R[i], self.K[i] = self._output_prediction(self.xp[i], self.P[i], self.inputs[i], i)
 
@@ -204,8 +208,7 @@ class BaseFilter():
             # Data update
             self.x[i], self.P[i] = self._data_update(self.xp[i], self.P[i], self.e[i], self.K[i], self.R[i], i)
 
-            # Time update
-            self.xp[i+1], self.P[i+1] = self._time_update(self.x[i], self.inputs[i], self.P[i], i)
+            
 
 
 

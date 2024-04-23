@@ -38,10 +38,13 @@ coverage: ## check code coverage quickly with the default Python
 	coverage html
 	$(BROWSER) htmlcov/index.html
 
-
+test_lint:
+	mypy --strict  src/
+	ruff check .
 
 
 setup_env: ## setup the environment for development
 	pip install -r requirements_dev.txt
 	pip
 	pip install -e .
+
